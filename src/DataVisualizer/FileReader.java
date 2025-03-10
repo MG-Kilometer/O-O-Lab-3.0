@@ -42,10 +42,9 @@ public class FileReader {
             //uses Stream to read all lines and join them with newlines
             fileContent = br.lines().collect(Collectors.joining("\n"));
 
-        //if exception occurs, print default trace and set fileContent to being empty
+        //if exception occurs, set fileContent to being empty
         } catch (IOException e) {
 
-            e.printStackTrace();
             fileContent = "";
 
         }

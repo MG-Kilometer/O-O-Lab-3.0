@@ -55,4 +55,11 @@ public class DataList {
 
     }
 
+    //getter for DataRows
+    public ArrayList<ArrayList<String>> getData() {
+
+        return DataRows;
+
+    }
+
 }
