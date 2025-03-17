@@ -1,6 +1,22 @@
 package DataVisualizer;
 
-//empty as is goes into part 2
+//Author: Miles Glover
+//purpose of file: does stats
 
-public class StatsPanel {
+
+import javax.swing.*;
+import java.awt.*;
+
+public class StatsPanel extends JPanel {
+
+    public StatsPanel() {
+
+        //sets up panel layout
+        setLayout(new BorderLayout());
+
+        //adds placeholder text
+        add(new JLabel("Stats Panel - Placeholder", SwingConstants.CENTER), BorderLayout.CENTER);
+
+    }
+
 }

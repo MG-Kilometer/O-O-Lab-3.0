@@ -17,8 +17,8 @@ public class TableRunner {
         System.out.println("Tenth row of data -\t\t"+Data_List.getLine(10));
         System.out.println("Number of data rows:\t"+(Data_List.size()-1)+" total rows");
 
-        //GUI for displaying data table
-        SwingUtilities.invokeLater(() -> new TablePanel(Data_List));
+        //GUI for displaying data visualizer
+        SwingUtilities.invokeLater(() -> new VisualizerPanel(Data_List));
 
     }
 
