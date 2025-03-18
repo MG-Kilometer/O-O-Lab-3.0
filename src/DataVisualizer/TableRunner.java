@@ -5,6 +5,7 @@ package DataVisualizer;
 
 import javax.swing.*;
 
+
 public class TableRunner {
 
     public static void main(String[] args) {
@@ -17,8 +18,13 @@ public class TableRunner {
         System.out.println("Tenth row of data -\t\t"+Data_List.getLine(10));
         System.out.println("Number of data rows:\t"+(Data_List.size()-1)+" total rows");
 
-        //GUI for displaying data visualizer
-        SwingUtilities.invokeLater(() -> new VisualizerPanel(Data_List));
+        //creates panels
+        DetailsPanel detailsPanel = new DetailsPanel();
+        StatsPanel statsPanel = new StatsPanel();
+        TablePanel tablePanel = new TablePanel(Data_List,detailsPanel, statsPanel);
+
+        //creates main visualizer window
+        SwingUtilities.invokeLater(() -> new VisualizerPanel(tablePanel, detailsPanel, statsPanel));
 
     }
 

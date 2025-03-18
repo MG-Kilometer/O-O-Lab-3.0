@@ -8,7 +8,7 @@ import java.awt.*;
 
 public class VisualizerPanel extends JFrame {
 
-    public VisualizerPanel(DataList dataList) {
+    public VisualizerPanel(TablePanel tablePanel, DetailsPanel detailsPanel, StatsPanel statsPanel) {
 
         //sets up main window
         setTitle("Data Visualizer");
@@ -16,11 +16,11 @@ public class VisualizerPanel extends JFrame {
         setSize(1200, 800);
         setLayout(new GridLayout(2, 2));
 
-        //adds the four quadrants to the panel
-        add(new TablePanel(dataList));
-        add(new StatsPanel());
-        add(new ChartPanel());
-        add(new DetailsPanel());
+        //adds panels in quadrants
+        add(tablePanel);
+        add(statsPanel);
+        add(detailsPanel);
+        add(new JLabel("Chart Panel (Placeholder)"));
 
         //displays the window
         setVisible(true);

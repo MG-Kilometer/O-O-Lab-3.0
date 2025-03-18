@@ -8,13 +8,35 @@ import java.awt.*;
 
 public class DetailsPanel extends JPanel {
 
+    private JTextArea detailsText;
+    private JLabel selectedRowLabel;
+
     public DetailsPanel() {
 
-        //sets up panel layout
+        //sets layout
         setLayout(new BorderLayout());
 
-        //adds placeholder text
-        add(new JLabel("Details Panel - Placeholder", SwingConstants.CENTER), BorderLayout.CENTER);
+        //label for currently selected row
+        selectedRowLabel = new JLabel("Selected Row: None");
+        add(selectedRowLabel, BorderLayout.NORTH);
+
+        //text area for displaying row details
+        detailsText = new JTextArea();
+        detailsText.setEditable(false);
+        detailsText.setLineWrap(true);
+        detailsText.setWrapStyleWord(true);
+
+        //adds text area inside a scroll pane
+        JScrollPane scrollPane = new JScrollPane(detailsText);
+        add(scrollPane, BorderLayout.CENTER);
+
+    }
+
+    //updates the displayed details based on selected row
+    public void updateDetails(String rowDetails, int rowIndex) {
+
+        selectedRowLabel.setText("Selected Row: " + (rowIndex + 1));
+        detailsText.setText(rowDetails);
 
     }
 
