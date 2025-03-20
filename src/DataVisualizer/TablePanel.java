@@ -5,216 +5,237 @@ package DataVisualizer;
 
 
 import javax.swing.*;
-import javax.swing.table.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.List;
 
 public class TablePanel extends JPanel {
 
-    //constant class gui variables
-    private final int DEFAULT_HEADER_FONT_SIZE = 14;
-    private final int DEFAULT_PADDING = 30;
-    private final String PANEL_NAME = "Data Table Viewer";
+    //constant thresholds for filters
+    private final double Filter1Threshold = 2.113;
+    private final double Filter2Threshold = 20000;
 
+    //GUI components
     private JTable table;
     private DefaultTableModel model;
-    private TableRowSorter<DefaultTableModel> sorter;
-    private JComboBox<String> filterDropdown1;
-    private JComboBox<String> filterDropdown2;
-    private JComboBox<String> filterDropdown3;
-    private JComboBox<String> sortColumnDropdown;
-    private JComboBox<String> sortOrderDropdown;
+    private DataList dataList;
     private DetailsPanel detailsPanel;
     private StatsPanel statsPanel;
+    private ChartPanel chartPanel;
+    private JComboBox<String> sortColumnSelector;
+    private JComboBox<String> timeFilter, numFilter1, numFilter2;
 
-    public TablePanel(DataList dataList, DetailsPanel detailsPanel, StatsPanel statsPanel) {
+    //constructor for TablePanel class
+    public TablePanel(DataList dataList, DetailsPanel detailsPanel, StatsPanel statsPanel, ChartPanel chartPanel) {
 
-        //sets up references to other panels
+        this.dataList = dataList;
         this.detailsPanel = detailsPanel;
         this.statsPanel = statsPanel;
+        this.chartPanel = chartPanel;
 
-        //sets up panel layout
         setLayout(new BorderLayout());
 
-        //creates header label
-        JLabel titleLabel = new JLabel(PANEL_NAME, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        //title label for the panel
+        JLabel titleLabel = new JLabel("Table", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         add(titleLabel, BorderLayout.NORTH);
 
-        //gets the data from DataList
-        ArrayList<ArrayList<String>> data = dataList.getData();
+        //create column headers based on data from dataList
+        ArrayList<String> headers = dataList.getLine(0);
+        String[] columnNames = headers.toArray(new String[0]);
 
-        //makes sure that data is not empty before proceeding
-        if (data.isEmpty()) {
-
-            JOptionPane.showMessageDialog(this, "No data available to display!", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-
-        }
-
-        //gets the header data and put it into both originalHeaders and columnNames
-        String[] originalHeaders = data.get(0).toArray(new String[0]);
-        String[] columnNames = new String[originalHeaders.length + 1];
-
-        //adds custom column to track index of current data in the table
-        columnNames[0] = "Index";
-        System.arraycopy(originalHeaders, 0, columnNames, 1, originalHeaders.length);
-
-        //gets the regular data and put it into tableData
-        String[][] tableData = new String[data.size() - 1][columnNames.length];
-        for (int i = 1; i < data.size(); i++) {
-
-            tableData[i - 1][0] = String.valueOf(i);
-            for (int j = 0; j < originalHeaders.length; j++) {
-
-                tableData[i - 1][j + 1] = data.get(i).get(j);
-
-            }
-
-        }
-
-        //creates table model with data
-        model = new DefaultTableModel(tableData, columnNames);
+        model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
-        sorter = new TableRowSorter<>(model);
-        table.setRowSorter(sorter);
 
-        //locks column reordering
-        table.getTableHeader().setReorderingAllowed(false);
+        //populate table rows with data from dataList
+        for (int i = 1; i < dataList.size(); i++) {
 
-        //disables auto-resizing so horizontal scrolling can work
+            model.addRow(dataList.getLine(i).toArray(new Object[0]));
+
+        }
+
+        //set table to not auto resize columns
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
-        //sets column widths based on header text length
-        setColumnWidths(table, columnNames);
-
-        //creates scroll pane with horizontal and vertical scrolling
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         add(scrollPane, BorderLayout.CENTER);
 
-        //creates filter and sorting controls
-        JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayout(2, 3, 10, 10));
-
-        //dropdowns for filtering
-        filterDropdown1 = new JComboBox<>(new String[]{"Filter 1: None", "Option A", "Option B"});
-        filterDropdown2 = new JComboBox<>(new String[]{"Filter 2: None", "Option X", "Option Y"});
-        filterDropdown3 = new JComboBox<>(new String[]{"Filter 3: None", "Option M", "Option N"});
-
-        //dropdowns for sorting
-        sortColumnDropdown = new JComboBox<>(columnNames);
-        sortOrderDropdown = new JComboBox<>(new String[]{"Ascending", "Descending"});
-
-        //apply sorting button
+        //create sort column selector combo box
+        sortColumnSelector = new JComboBox<>(columnNames);
         JButton sortButton = new JButton("Sort");
-        sortButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                applySorting();
-            }
-        });
+        sortButton.addActionListener(this::sortTable);
 
-        //adds all components to the control panel
-        controlPanel.add(filterDropdown1);
-        controlPanel.add(filterDropdown2);
-        controlPanel.add(filterDropdown3);
-        controlPanel.add(sortColumnDropdown);
-        controlPanel.add(sortOrderDropdown);
-        controlPanel.add(sortButton);
+        //create filter combo boxes
+        timeFilter = new JComboBox<>(new String[]{"No Filter", "Before 2020", "After 2020"});
+        numFilter1 = new JComboBox<>(new String[]{"No Filter", "Above "+Filter1Threshold, "Below "+Filter1Threshold});
+        numFilter2 = new JComboBox<>(new String[]{"No Filter", "Above "+Filter2Threshold, "Below "+Filter2Threshold});
 
-        //adds the control panel to the window
+        //create apply filters button
+        JButton filterButton = new JButton("Apply Filters");
+        filterButton.addActionListener(this::applyFilters);
+
+        //create control panel with sorting and filtering controls
+        JPanel controlPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        //sort by label and column selector
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        controlPanel.add(new JLabel("Sort by:"), gbc);
+
+        gbc.gridx = 1;
+        controlPanel.add(sortColumnSelector, gbc);
+
+        gbc.gridx = 2;
+        controlPanel.add(sortButton, gbc);
+
+        //time filter label and combo box
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        controlPanel.add(new JLabel("Time Filter:"), gbc);
+
+        gbc.gridx = 1;
+        controlPanel.add(timeFilter, gbc);
+
+        //filter for CO2 Factor
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        controlPanel.add(new JLabel("Filter CO2.Factor.OIL:"), gbc);
+
+        gbc.gridx = 1;
+        controlPanel.add(numFilter1, gbc);
+
+        //filter for Positive Generation
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        controlPanel.add(new JLabel("Filter Positive.Generation:"), gbc);
+
+        gbc.gridx = 1;
+        controlPanel.add(numFilter2, gbc);
+
+        //apply filters button
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        controlPanel.add(filterButton, gbc);
+
         add(controlPanel, BorderLayout.SOUTH);
 
-        //adds selection listener to update details panel
-        table.getSelectionModel().addListSelectionListener(event -> {
-
-            int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-
-                int modelRow = table.convertRowIndexToModel(selectedRow);
-                String[] rowData = new String[columnNames.length];
-
-                for (int i = 0; i < columnNames.length; i++) {
-                    rowData[i] = model.getValueAt(modelRow, i).toString();
-                }
-
-                detailsPanel.updateDetails(rowData);
-
-            }
-
-        });
-
-        //updates stats panel with initial data
-        updateStatsPanel();
+        //listener to update details panel on table row selection
+        table.getSelectionModel().addListSelectionListener(event -> updateDetailsPanel());
 
     }
 
-    //method to apply sorting based on dropdown selection
-    private void applySorting() {
+    //method to sort table based on selected column
+    private void sortTable(ActionEvent e) {
 
-        int columnIndex = sortColumnDropdown.getSelectedIndex();
-        boolean ascending = sortOrderDropdown.getSelectedItem().equals("Ascending");
+        int columnIndex = sortColumnSelector.getSelectedIndex();
+        ArrayList<ArrayList<String>> data = new ArrayList<>();
 
-        sorter.setComparator(columnIndex, new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                try {
-                    return ascending ? Integer.compare(Integer.parseInt(o1), Integer.parseInt(o2))
-                            : Integer.compare(Integer.parseInt(o2), Integer.parseInt(o1));
-                } catch (NumberFormatException e) {
-                    return ascending ? o1.compareTo(o2) : o2.compareTo(o1);
-                }
-            }
-        });
-
-        sorter.sort();
-        updateStatsPanel();
-
-    }
-
-    //method to update stats panel based on visible data
-    private void updateStatsPanel() {
-
-        ArrayList<String[]> visibleData = new ArrayList<>();
+        //copy table data into ArrayList for sorting
         for (int i = 0; i < model.getRowCount(); i++) {
 
-            String[] rowData = new String[model.getColumnCount()];
+            ArrayList<String> row = new ArrayList<>();
             for (int j = 0; j < model.getColumnCount(); j++) {
 
-                rowData[j] = model.getValueAt(i, j).toString();
+                row.add(model.getValueAt(i, j).toString());
 
             }
-
-            visibleData.add(rowData);
+            data.add(row);
 
         }
 
-        statsPanel.updateStatistics(visibleData);
+        //sort data based on selected column index
+        data.sort((row1, row2) -> row1.get(columnIndex).compareTo(row2.get(columnIndex)));
+
+        //update table with sorted data
+        model.setRowCount(0);
+        for (ArrayList<String> row : data) {
+
+            model.addRow(row.toArray());
+
+        }
 
     }
 
-    //method to set column widths based on header text length
-    private void setColumnWidths(JTable table, String[] columnNames) {
+    //method to apply filters to table data
+    private void applyFilters(ActionEvent e) {
 
-        JTableHeader header = table.getTableHeader();
-        FontMetrics fm = header.getFontMetrics(header.getFont());
-        TableColumnModel columnModel = table.getColumnModel();
+        List<ArrayList<String>> filteredData = new ArrayList<>();
 
-        for (int i = 0; i < columnNames.length; i++) {
+        //iterate through data rows to apply filters
+        for (int i = 1; i < dataList.size(); i++) {
 
-            TableColumn column = columnModel.getColumn(i);
-            int width = fm.stringWidth(columnNames[i]) + DEFAULT_PADDING;
-            column.setPreferredWidth(width);
+            ArrayList<String> row = dataList.getLine(i);
+            boolean matchesFilter = true;
+
+            //time filter based on year
+            String date = row.get(1);
+            int year = Integer.parseInt(date.split("/")[2]);
+            String timeSelection = (String) timeFilter.getSelectedItem();
+            if ("Before 2020".equals(timeSelection) && year >= 2020) matchesFilter = false;
+            if ("After 2020".equals(timeSelection) && year < 2020) matchesFilter = false;
+
+            //numerical filter 1 (CO2 factor)
+            try {
+                String num1Selection = (String) numFilter1.getSelectedItem();
+                double value1 = Double.parseDouble(row.get(26));
+                if (("Above " + Filter1Threshold).equals(num1Selection) && value1 <= Filter1Threshold)
+                    matchesFilter = false;
+                if (("Below " + Filter1Threshold).equals(num1Selection) && value1 >= Filter1Threshold)
+                    matchesFilter = false;
+            }catch (NumberFormatException ex) {matchesFilter = true;}
+
+            //numerical filter 2 (positive generation)
+            try {
+                String num2Selection = (String) numFilter2.getSelectedItem();
+                double value2 = Double.parseDouble(row.get(38));
+                if (("Above " + Filter2Threshold).equals(num2Selection) && value2 <= Filter2Threshold)
+                    matchesFilter = false;
+                if (("Below " + Filter2Threshold).equals(num2Selection) && value2 >= Filter2Threshold)
+                    matchesFilter = false;
+            }catch (NumberFormatException ex) {matchesFilter = true;}
+
+            //add row to filtered data if it matches all filters
+            if (matchesFilter) filteredData.add(row);
+
+        }
+
+        //update table with filtered data
+        model.setRowCount(0);
+        for (ArrayList<String> row : filteredData) {
+
+            model.addRow(row.toArray());
+
+        }
+
+        //update each of the other panels to reflect the filtered data
+        statsPanel.filteredUpdate(filteredData);
+        chartPanel.filteredUpdate(filteredData,dataList.getLine(0));
+        detailsPanel.filteredUpdate(filteredData,dataList.getLine(0));
+
+    }
+
+    //method to update details panel with selected row details
+    private void updateDetailsPanel() {
+
+        int rowIndex = table.getSelectedRow();
+        if (rowIndex >= 0) {
+
+            StringBuilder details = new StringBuilder();
+            for (int i = 0; i < model.getColumnCount(); i++) {
+
+                details.append(model.getColumnName(i)).append(": ").append(model.getValueAt(rowIndex, i)).append("\n");
+
+            }
+
+            detailsPanel.updateDetails(details.toString(), rowIndex);
 
         }
 
     }
 
 }
-
-
-

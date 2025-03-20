@@ -62,4 +62,18 @@ public class DataList {
 
     }
 
+    //simple clear method for data
+    public void clearData(){
+
+        DataRows.clear();
+
+    }
+
+    //simple adder for new data rows (useful for reconstruction and filtering)
+    public void add(ArrayList<String> row){
+
+        DataRows.add(row);
+
+    }
+
 }

@@ -8,7 +8,7 @@ import java.awt.*;
 
 public class VisualizerPanel extends JFrame {
 
-    public VisualizerPanel(TablePanel tablePanel, DetailsPanel detailsPanel, StatsPanel statsPanel) {
+    public VisualizerPanel(TablePanel tablePanel, DetailsPanel detailsPanel, StatsPanel statsPanel, ChartPanel chartPanel) {
 
         //sets up main window
         setTitle("Data Visualizer");
@@ -20,7 +20,7 @@ public class VisualizerPanel extends JFrame {
         add(tablePanel);
         add(statsPanel);
         add(detailsPanel);
-        add(new JLabel("Chart Panel (Placeholder)"));
+        add(chartPanel);
 
         //displays the window
         setVisible(true);
@@ -28,4 +28,5 @@ public class VisualizerPanel extends JFrame {
     }
 
 }
+
 
